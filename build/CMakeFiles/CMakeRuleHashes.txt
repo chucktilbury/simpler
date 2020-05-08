@@ -1,4 +1,0 @@
-# Hashes of file build rules.
-be32e152f85e24bdecd546c600efbb9e ../src/cmdline.c
-c9fc809a2931f4eb1298d8d0cc4db88a ../src/scanner.c
-d6dc4ff6be9257f3ebbd229acf2eb8b8 CMakeFiles/doc
