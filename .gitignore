@@ -1,3 +1,9 @@
+build/
+docs/out
+bin/simpler
+src/cmdline.c
+src/scanner.c
+
 # Prerequisites
 *.d
 
