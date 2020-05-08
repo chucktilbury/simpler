@@ -1,0 +1,1 @@
+/usr/bin/cc    CMakeFiles/simpler.dir/errors.c.o CMakeFiles/simpler.dir/hash_table.c.o CMakeFiles/simpler.dir/lists.c.o CMakeFiles/simpler.dir/parser.c.o CMakeFiles/simpler.dir/simpler.c.o CMakeFiles/simpler.dir/stacks.c.o CMakeFiles/simpler.dir/cmdline.c.o CMakeFiles/simpler.dir/scanner.c.o  -o ../../bin/simpler 

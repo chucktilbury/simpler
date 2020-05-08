@@ -1,0 +1,6 @@
+/home/chuck/Src/simpler/build/CMakeFiles/rebuild_cache.dir
+/home/chuck/Src/simpler/build/CMakeFiles/doc.dir
+/home/chuck/Src/simpler/build/CMakeFiles/edit_cache.dir
+/home/chuck/Src/simpler/build/src/CMakeFiles/rebuild_cache.dir
+/home/chuck/Src/simpler/build/src/CMakeFiles/simpler.dir
+/home/chuck/Src/simpler/build/src/CMakeFiles/edit_cache.dir
