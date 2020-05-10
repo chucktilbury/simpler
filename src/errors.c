@@ -49,11 +49,12 @@ void syntax(char* str, ...)
     va_list args;
     const char* name = get_file_name();
     int lnum = get_line_number();
+    int cnum = get_col_number();
 
     if(NULL != name)
-        fprintf(stderr, "error: %s: %d: ", name, lnum);
+        fprintf(stderr, "Syntax: %s: %d: %d: ", name, lnum, cnum);
     else
-        fprintf(stderr, "error: ");
+        fprintf(stderr, "Syntax: ");
 
     va_start(args, str);
     vfprintf(stderr, str, args);
@@ -67,9 +68,10 @@ void scanner_error(char* str, ...)
     va_list args;
     const char* name = get_file_name();
     int lnum = get_line_number();
+    int cnum = get_col_number();
 
     if(NULL != name)
-        fprintf(stderr, "Scanner Error: %s: %d: ", name, lnum);
+        fprintf(stderr, "Scanner Error: %s: %d: %d: ", name, lnum, cnum);
     else
         fprintf(stderr, "Scanner Error: ");
 
@@ -85,9 +87,10 @@ void warning(char* str, ...)
     va_list args;
     const char* name = get_file_name();
     int lnum = get_line_number();
+    int cnum = get_col_number();
 
     if(NULL != name)
-        fprintf(stderr, "Warning: %s: %d: ", name, lnum);
+        fprintf(stderr, "Warning: %s: %d: %d: ", name, lnum, cnum);
     else
         fprintf(stderr, "Warning: ");
 
@@ -129,4 +132,39 @@ void fatal_error(char* str, ...)
     fprintf(stderr, "\n");
 
     exit(1);
+}
+
+
+void debug_msg(int lev, const char *str, ...) {
+
+    va_list args;
+    FILE *ofp;
+
+    if(lev <= errors.level) {
+        if(NULL != errors.fp)
+            ofp = errors.fp;
+        else
+            ofp = stderr;
+
+        fprintf(ofp, "MSG: %s: %d: %d: ", get_file_name(), get_line_number(), get_col_number());
+        va_start(args, str);
+        vfprintf(ofp, str, args);
+        va_end(args);
+        fprintf(ofp, "\n");
+    }
+}
+
+void debug_mark(int lev, const char *file, int line, const char *func) {
+
+    FILE *ofp;
+
+    if(lev <= errors.level) {
+        if(NULL != errors.fp)
+            ofp = errors.fp;
+        else
+            ofp = stderr;
+
+        fprintf(ofp, "MARK: (%s, %d) %s: %d: %d: %s\n", file, line, get_file_name(), get_line_number(), get_col_number(), func);
+        //fprintf(ofp, "      %s: %d\n", file, line);
+    }
 }

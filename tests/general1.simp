@@ -1,0 +1,44 @@
+/*
+    Verify that the general format of a file is parsed correctly
+*/
+import "some_file";
+
+var sadf;
+var asd123;
+var sdfsd = 2+2;
+
+type asdf {
+    var asd;
+    var opire;
+    var zxc[] = [1, 2, 3];
+    var sad['asd'][0, [1, 2,3]] = 123;
+    proc weriuy()();
+};
+
+proc sdf(qwe, qwe, qwe)(sdf, sdf) {
+    proc qwe()() {
+        var asd = 12*2/3;
+    }
+    while(asd.qwe neq 100.01) {
+        switch(asd.wer.ew) {
+            case (123) {
+                if(asd) {
+                    asdf()();
+                }
+                else (qwek) { var asdf; qwer()(asddf); }
+                else {
+                    var asd= 123;
+                }
+            }
+            case (asd) {
+                asdas('asd':(asd, 123))(asd);
+            }
+            default {}
+        }
+    }
+    // init a type struct
+    asdf = {.asd=1+2, .opire={.one=1, .two=2, .three=3}, .sad=0, .wer = sdf};
+}
+
+// create list definition vs list reference
+// create dict definition vs reference

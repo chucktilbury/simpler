@@ -19,7 +19,7 @@ int num_errors = 0; // global updated by parser
 
 // these funcs support the string scanner
 static void append_char(char ch) {
-    if((sizeof(buffer)-1) > bidx) {
+    if((sizeof(buffer)-1) > (size_t)bidx) {
         buffer[bidx] = ch;
         bidx++;
     }
@@ -50,7 +50,7 @@ static void update_loc(void){
 }
 
 #define YY_USER_ACTION update_loc();
-//#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
+
 %}
 
     /* state definitions */
@@ -63,7 +63,7 @@ static void update_loc(void){
 %%
 
     /* overhead */
-\n              { name_stack->line_no++; name_stack->col_no=1; }
+\n              { name_stack->line_no++; name_stack->col_no=0; }
 [ \t\r]         {}
 
     /* keywords */
@@ -92,16 +92,16 @@ static void update_loc(void){
 "yield"         { return YIELD; }
 
     /* boolean operator tokens composed of special characters */
-"and"           { return AND; }
-"or"            { return OR; }
+"&&"|"and"      { return AND; }
+"||"|"or"       { return OR; }
 
-"not"           { return NOT; }
-"equ"           { return EQ; }
-"neq"           { return NE; }
-"leq"           { return LE; }
-"geq"           { return GE; }
-"lt"            { return LT; }
-"gt"            { return GT; }
+"!"|"not"       { return NOT; }
+"=="|"equ"      { return EQ; }
+"!="|"neq"      { return NE; }
+"<="|"leq"      { return LE; }
+">="|"geq"      { return GE; }
+"<"|"lt"        { return LT; }
+">"|"gt"        { return GT; }
 
     /* arithmetic operators */
 "<<"            { return BSHL; }
@@ -122,7 +122,7 @@ static void update_loc(void){
 "@"             { return '@'; }
 "^"             { return '^'; }
 "~"             { return '~'; }
-"!"             { return NOT; }
+"#"             { return '#'; }
 
     /* Other operators */
 ","             { return ','; }
@@ -142,7 +142,7 @@ static void update_loc(void){
     /* recognize and ignore a C comments */
 "/*" { BEGIN(COMMENT); }
 <COMMENT>"*/" { BEGIN(INITIAL); }
-<COMMENT>\n { name_stack->line_no++; yylineno++; }
+<COMMENT>\n { name_stack->line_no++; yylineno++; name_stack->col_no=0; }
 <COMMENT>.  {}  /* eat everything in between */
 "//".* {} /* eat up until the newline */
 
@@ -279,11 +279,14 @@ const char *get_tok_str(void) {
     return strbuf;
 }
 
+// for reference. not used.
 int get_token(char* str, size_t size) {
 
-    //memset(strbuf, 0, sizeof(strbuf));
+    //memset(buffer, 0, sizeof(buffer));
+    memset(strbuf, 0, sizeof(strbuf));
+    memset(str, 0, size);
     int tok = yylex();
-    int len = strlen(strbuf);
+    size_t len = strlen(strbuf);
 
     strncpy(str, strbuf, (size > len)? len: size);
     return tok;

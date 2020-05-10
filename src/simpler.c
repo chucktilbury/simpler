@@ -22,6 +22,7 @@ extern int yydebug;
 int main(int argc, char **argv)
 {
     init_errors(10, stdout);
+    yydebug = 0;
 
     int file_count =  get_cmd_line(argc, argv);
 
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
     for(int i = 0; i < file_count; i++)
     {
         open_file(infile[i]);
-        parse();
+        yyparse();
     }
 
     int errors = get_num_errors();

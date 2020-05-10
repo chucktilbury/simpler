@@ -4,6 +4,9 @@ set(LEX_FILE      ${CMAKE_CURRENT_SOURCE_DIR}/scanner.l)
 set(LEX_C_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
 set(CMD_FILE      ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.l)
 set(CMD_C_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.c)
+set(YACC_FILE     ${CMAKE_CURRENT_SOURCE_DIR}/parser.y)
+set(YACC_C_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
+set(YACC_H        ${PROJECT_INCLUDE_DIRECTORY}/parser.h)
 
 add_custom_command(OUTPUT ${LEX_C_SOURCE}
         DEPENDS ${LEX_FILE}
@@ -17,16 +20,26 @@ add_custom_command(OUTPUT ${CMD_C_SOURCE}
         COMMAND flex -Pcmd_ -o ${CMD_C_SOURCE} ${CMD_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_custom_command(OUTPUT ${YACC_C_SOURCE} ${YACC_H}
+        DEPENDS ${YACC_FILE}
+        PRE_BUILD
+        COMMAND bison --report=lookahead -tvdo ${YACC_C_SOURCE} ${YACC_FILE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_executable(${PROJECT_NAME}
+    cmdline.c
+    scanner.c
+    parser.c
     errors.c
     hash_table.c
     lists.c
-    parser.c
     simpler.c
     stacks.c
-    cmdline.c
-    scanner.c
 )
 
+set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/parser.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/parser.output"
+)
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-g" "-DTRACE" "-lfl")
+target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-Wextra" "-g" "-DTRACE" )
