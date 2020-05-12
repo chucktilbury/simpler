@@ -70,7 +70,14 @@ static void update_loc(void){
 "nothing"       { return NOTHING; }
 "import"        { return IMPORT; }
 "proc"          { return PROC; }
-"var"           { return VAR; }
+"struct"        { return STRUCT; }
+"list"          { return LIST; }
+"dict"          { return DICT; }
+"string"        { return STRING; }
+"bool"          { return BOOL; }
+"uint"          { return UINT; }
+"int"           { return INT; }
+"float"         { return FLOAT; }
 "true"          { return TRUE; }
 "false"         { return FALSE; }
 "if"            { return IF; }
@@ -83,7 +90,6 @@ static void update_loc(void){
 "continue"      { return CONTINUE; }
 "return"        { return RETURN; }
 "default"       { return DEFAULT; }
-"type"          { return TYPE; }
 "allocate"      { return ALLOCATE; }
 "dispose"       { return DISPOSE; }
 "sizeof"        { return SIZEOF; }

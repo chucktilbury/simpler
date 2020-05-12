@@ -11,12 +11,13 @@ void yyerror(const char* s);
 %defines
 
 %token SYMBOL UNUM FNUM INUM QSTRG PROC
-%token NOTHING IMPORT TYPE ENTRY YIELD
-%token IF TRUE VAR
+%token NOTHING IMPORT STRUCT ENTRY YIELD
+%token IF TRUE
 %token ELSE WHILE DO FALSE RETURN
 %token SWITCH CASE BREAK CONTINUE AND OR DEFAULT
 %token NOT EQ NE LE GE BSHL BSHR BROL
 %token BROR INC DEC GT LT ALLOCATE DISPOSE SIZEOF TYPEOF
+%token STRING BOOL UINT INT FLOAT LIST DICT TUPLE
 
 %left AND OR
 %left '&' '|' '^'
@@ -43,24 +44,14 @@ module_item_list: module_item {
     ;
 
 module_item
-    : entry_definition {
-            MSG("module_item->entry_definition");
-        }
-    | proc_declaration {
-            MSG("module_item->proc_declaration");
-        }
-    | proc_definition {
-            MSG("module_item->proc_definition");
-        }
-    | data_definition ';' {
+    : variable_definition {
             MSG("module_item->data_definition");
         }
     | import_statement ';' {
             MSG("module_item->import_statement");
         }
-    | type_definition ';' {
-            MSG("module_item->type_definition");
-        }
+    | proc_definition
+    | entry_definition
     ;
 
 import_statement
@@ -74,543 +65,407 @@ import_statement
      *************************************************************************/
 
 bool_value
-    : TRUE {
-            MSG("bool_value->TRUE");
-        }
-    | FALSE {
-            MSG("bool_value->FALSE");
-        }
+    : TRUE { MSG("bool_value->TRUE"); }
+    | FALSE { MSG("bool_value->FALSE"); }
     ;
 
-complex_name
-    : SYMBOL {
-            MSG("complex_name (init)");
-        }
-    | complex_name '.' SYMBOL {
-            MSG("complex_name (add)");
-        }
+compound_name
+    : SYMBOL { MSG("compound_name (init)"); }
+    | compound_name '.' SYMBOL { MSG("compound_name (add)"); }
     ;
 
 number
-    : UNUM {
-            MSG("number->UNUM");
-        }
-    | INUM {
-            MSG("number->INUM");
-        }
-    | FNUM {
-            MSG("number->FNUM");
-        }
-    | SIZEOF '(' parameter_element ')' {
-            MSG("number->SIZEOF");
-        }
+    : UNUM { MSG("number->UNUM"); }
+    | INUM { MSG("number->INUM"); }
+    | FNUM { MSG("number->FNUM"); }
+    | SIZEOF '(' compound_name ')' { MSG("number->SIZEOF"); }
     ;
 
 formatted_string
-    : QSTRG {
-            MSG("formatted_string (no format)");
-        }
-    | QSTRG ':' '(' simple_parameter_list ')' {
-            MSG("formatted_string (with format)");
-        }
+    : QSTRG { MSG("formatted_string (no format)"); }
+    | QSTRG ':' '(' generic_value_list ')' { MSG("formatted_string (with format)"); }
+    ;
+
+generic_value
+    : bool_value { MSG(""); }
+    | compound_name { MSG(""); }
+    | number  { MSG(""); }
+    | formatted_string { MSG(""); }
+    ;
+
+generic_value_list
+    : generic_value { MSG(""); }
+    | generic_value_list ',' generic_value { MSG(""); }
     ;
 
     /**************************************************************************
-     *  Expressions and expression realted definitions.
+     *  Rules relates to variable definitions and references
      *************************************************************************/
 
-expression
-    : number {
-            MSG("expression->number");
-        }
-    | complex_name {
-            MSG("expression->complex_name");
-        }
-    | list_reference {
-            MSG("expression->list_reference");
-        }
-    | expression '+' expression {
-            MSG("expression-> '+' ");
-        }
-    | expression '-' expression {
-            MSG("expression-> '-' ");
-        }
-    | expression '/' expression {
-            MSG("expression-> '/' ");
-        }
-    | expression '*' expression {
-            MSG("expression-> '*' ");
-        }
-    | expression '%' expression {
-            MSG("expression-> '%' ");
-        }
-    | expression AND expression {
-            MSG("expression->AND");
-        }
-    | expression OR expression {
-            MSG("expression->OR");
-        }
-    | expression LT expression {
-            MSG("expression->LT");
-        }
-    | expression GT expression {
-            MSG("expression->GT");
-        }
-    | expression EQ expression {
-            MSG("expression->EQ");
-        }
-    | expression NE expression {
-            MSG("expression->NE");
-        }
-    | expression LE expression {
-            MSG("expression->LE");
-        }
-    | expression GE expression {
-            MSG("expression->GE");
-        }
-    | expression '&' expression {
-            MSG("expression-> '&' ");
-        }
-    | expression '|' expression {
-            MSG("expression-> '|' ");
-        }
-    | expression '^' expression {
-            MSG("expression-> '^' ");
-        }
-    | expression BROL expression {
-            MSG("expression->BROL");
-        }
-    | expression BROR expression {
-            MSG("expression->BROR");
-        }
-    | expression BSHL expression {
-            MSG("expression->BSHL");
-        }
-    | expression BSHR expression {
-            MSG("expression->BSHR");
-        }
-    | expression NOT expression {
-            MSG("expression->NOT");
-        }
-    | '-' expression %prec NEG {
-            MSG("expression->unary '-'");
-        }
-    | NOT expression {
-            MSG("expression->unary NOT");
-        }
-    | '~' expression {
-            MSG("expression->unary '~' ");
-        }
-    | '(' expression ')'  {
-            MSG("expression->(expression)");
-        }
+variable_declaration
+    : STRING compound_name ';' { MSG(""); }
+    | BOOL compound_name ';' { MSG(""); }
+    | UINT compound_name ';' { MSG(""); }
+    | INT compound_name ';' { MSG(""); }
+    | FLOAT compound_name ';' { MSG(""); }
+    | LIST compound_name ';' { MSG(""); }
+    | DICT compound_name ';' { MSG(""); }
+    | STRUCT compound_name ';' { MSG(""); }
+    | TUPLE compound_name ';' { MSG(""); }
+    ;
+
+variable_definition
+    : string_definition { MSG(""); }
+    | bool_definition { MSG(""); }
+    | int_definition { MSG(""); }
+    | float_definition { MSG(""); }
+    | struct_definition { MSG(""); }
+    | list_definition { MSG(""); }
+    | dict_definition { MSG(""); }
+    | tuple_definition { MSG(""); }
+    | variable_declaration { MSG(""); }
+    ;
+
+variable_reference
+    : compound_name { MSG(""); }
+    | list_reference { MSG(""); }
+    | dict_reference { MSG(""); }
+    ;
+
+variable_assignment_item
+    : generic_value { MSG(""); }
+    | list_assignment { MSG(""); }
+    | dict_assignment { MSG(""); }
+    | tuple_assignment { MSG(""); }
+    ;
+
+variable_assignment
+    : variable_reference '=' variable_assignment_item ';' { MSG(""); }
+    ;
+
+string_definition
+    : STRING compound_name '=' formatted_string ';' { MSG(""); }
+    ;
+
+bool_definition
+    : BOOL compound_name '=' bool_value ';' { MSG(""); }
+    ;
+
+int_definition
+    : INT compound_name '=' expression ';' { MSG(""); }
+    | UINT compound_name '=' expression ';' { MSG(""); }
+    ;
+
+float_definition
+    : FLOAT compound_name '=' expression ';' { MSG(""); }
     ;
 
     /**************************************************************************
-     *  Parameter lists
+     *  List productions
      *************************************************************************/
 
-parameter_element
-    : formatted_string {
-            MSG("parameter_element->formatted_string");
-        }
-    | expression {
-            MSG("parameter_element->expression");
-        }
-    | bool_value {
-            MSG("parameter_element->bool_value");
-        }
+list_name
+    : LIST compound_name { MSG(""); }
     ;
 
-simple_parameter_list
-    : parameter_element {
-            MSG("simple_parameter_list->parameter_element (init)");
-        }
-    | simple_parameter_list ',' parameter_element {
-            MSG("simple_parameter_list->parameter_element (add)");
-        }
+list_item
+    : generic_value { MSG(""); }
+    | list_assignment { MSG(""); }
+    | dict_assignment { MSG(""); }
+    | tuple_assignment  { MSG(""); }
     ;
 
-subscript_reference
-    : expression {
-            MSG("subscript->expression");
-        }
-    | formatted_string  {
-            MSG("subscript->formatted_string");
-        }
+list_assignment_list
+    : list_item { MSG(""); }
+    | list_assignment_list ',' list_item { MSG(""); }
+
+list_assignment
+    : '[' list_assignment_list ']' { MSG(""); }
     ;
 
-subscript_reference_list
-    : '[' subscript_reference ']' {
-            MSG("subscript_list->subscript (init)");
-        }
-    |  subscript_reference_list  '[' subscript_reference ']' {
-            MSG("subscript_list->subscript (add)");
-        }
+list_definition // also accept "LIST compound_name ;" via variable_definition rule
+    : list_name '[' ']' ';' { MSG(""); }
+    | list_name '[' ']' '=' list_assignment ';' { MSG(""); }
+    | list_name '=' list_assignment ';' { MSG(""); }
+    ;
+
+list_reference_list
+    : '[' expression ']' { MSG(""); }
+    | list_reference_list '[' expression ']' { MSG(""); }
     ;
 
 list_reference
-    : complex_name subscript_reference_list {
-            MSG("list_reference");
-        }
-    ;
-
-proc_call_parameter_list
-    : parameter_element {
-            MSG("proc_call_parameter_list->parameter_element (init)");
-        }
-    | proc_call_parameter_list ',' parameter_element {
-            MSG("proc_call_parameter_list->parameter_element (add)");
-        }
-    | {
-            MSG("blank proc_call_parameter_list");
-        }
-    ;
-
-parameter_declaration
-    : complex_name {
-            MSG("parameter declaration item->complex_name");
-        }
-    | list_reference {
-            MSG("parameter declaration item->list_reference");
-        }
-    | {
-            MSG("blank parameter_declaration");
-        }
-    ;
-
-proc_decl_parameter_list
-    : parameter_declaration {
-            MSG("proc_decl_parameter_list->parameter_declaration");
-        }
-    | proc_decl_parameter_list ',' parameter_declaration {
-            MSG("proc_decl_parameter_list->proc_decl_parameter_list");
-        }
-    ;
-
-init_parameter_item     // used to initialize a type instance
-    : '.' complex_name '=' parameter_element {
-            MSG("init_parameter_item");
-        }
-    | '.' complex_name '=' init_parameter_list {
-            MSG("init_parameter_item");
-        }
-    ;
-
-init_parameter_item_list
-    : init_parameter_item {
-            MSG("init_parameter_item_list (init)");
-        }
-    | init_parameter_item_list ',' init_parameter_item {
-            MSG("init_parameter_item_list (add)");
-        }
-    ;
-
-init_parameter_list_item
-    : '{' init_parameter_item_list '}' {
-            MSG("init_parameter_list_item->init_parameter_item_list");
-        }
-    | init_parameter_item {
-            MSG("init_parameter_list_item->init_parameter_item");
-        }
-    ;
-
-init_parameter_list_item_list
-    : init_parameter_list_item {
-            MSG("init_parameter_list_item_list->init_parameter_list_item (init)");
-        }
-    | init_parameter_list_item_list ',' init_parameter_list_item {
-            MSG("init_parameter_list_item_list->init_parameter_list_item_list (add)");
-        }
-    ;
-
-init_parameter_list
-    : '{' init_parameter_list_item_list '}' {
-            MSG("init_parameter_list->init_parameter_list_item_list");
-        }
+    : compound_name list_reference_list { MSG(""); }
     ;
 
     /**************************************************************************
-     *  Data definition
+     *  Dict productions
      *************************************************************************/
 
-assignment_item
-    : parameter_element {
-            MSG("assignment_item->parameter_element");
-        }
-    | init_parameter_list {
-            MSG("assignment_item->init_parameter_list");
-        }
-    | ALLOCATE '(' expression ')' ';' {
-            MSG("assignment_item->ALLOCATE");
-        }
+dict_name
+    : DICT compound_name { MSG(""); }
     ;
 
-var_name
-    : complex_name {
-            MSG("var_name->complex_name");
-        }
-    | list_reference {
-            MSG("var_name->list_reference");
-        }
+dict_assignment_item
+    : compound_name ':' generic_value { MSG(""); }
+    | compound_name ':' dict_assignment { MSG(""); }
+    | compound_name ':' list_assignment { MSG(""); }
+    | compound_name ':' tuple_assignment { MSG(""); }
     ;
 
-data_definition
-    : VAR var_name {
-            MSG("data_definition->var_name");
-        }
-    | VAR var_name '=' assignment_item {
-            MSG("data_definition->var_name (assignment)");
-        }
+dict_assignment_list
+    : dict_assignment_item { MSG(""); }
+    | dict_assignment_list ',' dict_assignment_item { MSG(""); }
     ;
 
-
-type_defintion_item
-    : data_definition ';' {
-            MSG("type_defintion_item->data_definition");
-        }
-    | proc_declaration ';' {
-            MSG("type_defintion_item->proc_declaration");
-        }
+dict_assignment
+    : '{' dict_assignment_list '}' { MSG(""); }
     ;
 
-type_defintion_item_list
-    : type_defintion_item {
-            MSG("type_defintion_item_list->type_defintion_item (init)");
-        }
-    | type_defintion_item_list type_defintion_item {
-            MSG("type_defintion_item_list->type_defintion_item (add)");
-        }
+dict_definition // also accept "DICT compound_name ;" via variable_definition
+    : dict_name '[' ']' ';' { MSG(""); }
+    | dict_name '[' ']' '=' dict_assignment ';' { MSG(""); }
+    | dict_name '=' dict_assignment ';' { MSG(""); }
     ;
 
-type_definition
-    : TYPE  SYMBOL '{' type_defintion_item_list '}' {
-            MSG("type_definition");
-        }
+dict_reference_list
+    : '[' formatted_string ']' { MSG(""); }
+    | dict_reference_list '[' formatted_string ']' { MSG(""); }
     ;
 
-simple_assignment
-    : complex_name '=' assignment_item {
-            MSG("simple_assignment->complex_name");
-        }
-    | list_reference '=' assignment_item {
-            MSG("simple_assignment->list_reference");
-        }
+dict_reference
+    : compound_name dict_reference_list { MSG(""); }
     ;
 
     /**************************************************************************
-     *  Procedure related definitions.
+     *  Tuple productions
+     *
+     *  Note that a tuple reference is made with the same syntax as a list
+     *  reference.
      *************************************************************************/
 
-proc_body_element
-    : proc_body {
-            MSG("");
-        }
-    | proc_definition {
-            MSG("");
-        }
-    | data_definition ';' {
-            MSG("");
-        }
-    | type_definition {
-            MSG("");
-        }
-    | if_clause {
-            MSG("");
-        }
-    | while_clause {
-            MSG("");
-        }
-    | do_clause {
-            MSG("");
-        }
-    | switch_clause {
-            MSG("");
-        }
-    | proc_call  ';' {
-            MSG("");
-        }
-    | pre_post_inc ';' {
-            MSG("");
-        }
-    | simple_assignment ';' {
-            MSG("");
-        }
-    | DISPOSE '(' complex_name ')' ';' {
-            MSG("");
-        }
-    | YIELD ';' {
-            MSG("");
-        }
-    | RETURN ';' {
-            MSG("");
-        }
-    | BREAK ';' {
-            MSG("");
-        }
+tuple_name
+    : TUPLE compound_name { MSG(""); }
     ;
 
-proc_body_element_list
-    : proc_body_element {
-            MSG("");
-        }
-    | proc_body_element_list proc_body_element {
-            MSG("");
-        }
+tuple_assignment_item
+    : generic_value { MSG(""); }
+    | dict_assignment { MSG(""); }
+    | list_assignment { MSG(""); }
+    | tuple_assignment { MSG(""); }
     ;
 
-proc_body
-    : '{' '}' {
-            MSG("");
-        }
-    | '{' proc_body_element_list '}' {
-            MSG("");
-        }
+tuple_assignment_list
+    : tuple_assignment_item { MSG(""); }
+    | tuple_assignment_list ',' tuple_assignment_item { MSG(""); }
+    ;
+
+tuple_assignment
+    : '(' tuple_assignment_list ')' { MSG(""); }
+    ;
+
+tuple_definition // see variable_declaration
+    : tuple_name '=' tuple_assignment ';' { MSG(""); }
+    ;
+
+    /**************************************************************************
+     *  Struct productions
+     *
+     *  Note that a struct is referenced through a compound_name
+     *************************************************************************/
+
+struct_name
+    : STRUCT compound_name { MSG(""); }
+    ;
+
+struct_items
+    : variable_declaration { MSG("struct_items->variable_declaration (init)"); }
+    | struct_items variable_declaration { MSG("struct_items->variable_declaration (add)"); }
+    ;
+
+struct_definition
+    : struct_name '{' struct_items '}' ';' { MSG("struct_definition"); }
+    | struct_name '{' struct_items '}' '=' {MSG("assignemnt");} struct_assignment ';' { MSG("struct_definition with assignment"); }
+
+struct_assignment_item
+    : '.' compound_name '=' generic_value { MSG("struct_assignment_item->generic_value"); }
+    | '.' compound_name '=' struct_assignment { MSG("struct_assignment_item->struct_assignment"); }
+    ;
+
+struct_assignment_list
+    : struct_assignment_item { MSG("struct_assignment_list->struct_assignment_item"); }
+    | struct_assignment_list ',' struct_assignment_item { MSG("struct_assignment_list->struct_assignment_list"); }
+    ;
+
+struct_assignment
+    :  '{' struct_assignment_list '}' { MSG("struct_assignment"); }
     ;
 
 
-proc_declaration
-    : PROC complex_name  '(' proc_decl_parameter_list ')' '(' proc_decl_parameter_list ')' {
-            MSG("");
-        }
+    /**************************************************************************
+     *  Rules related to expressions
+     *************************************************************************/
+
+expression
+    : number { MSG("expression->number"); }
+    | variable_reference { MSG("expression->variable_reference"); }
+    | proc_reference { MSG("expression->proc_reference"); }
+    | expression '+' expression { MSG("expression-> '+' "); }
+    | expression '-' expression { MSG("expression-> '-' "); }
+    | expression '/' expression { MSG("expression-> '/' "); }
+    | expression '*' expression { MSG("expression-> '*' "); }
+    | expression '%' expression { MSG("expression-> '%' "); }
+    | expression AND expression { MSG("expression->AND"); }
+    | expression OR expression { MSG("expression->OR"); }
+    | expression LT expression { MSG("expression->LT"); }
+    | expression GT expression { MSG("expression->GT"); }
+    | expression EQ expression { MSG("expression->EQ"); }
+    | expression NE expression { MSG("expression->NE"); }
+    | expression LE expression { MSG("expression->LE"); }
+    | expression GE expression { MSG("expression->GE"); }
+    | expression '&' expression { MSG("expression-> '&' "); }
+    | expression '|' expression { MSG("expression-> '|' "); }
+    | expression '^' expression { MSG("expression-> '^' "); }
+    | expression BROL expression { MSG("expression->BROL"); }
+    | expression BROR expression { MSG("expression->BROR"); }
+    | expression BSHL expression { MSG("expression->BSHL"); }
+    | expression BSHR expression { MSG("expression->BSHR"); }
+    | expression NOT expression { MSG("expression->NOT"); }
+    | '-' expression %prec NEG { MSG("expression->unary '-'"); }
+    | NOT expression { MSG("expression->unary NOT"); }
+    | '~' expression { MSG("expression->unary '~' "); }
+    | '(' expression ')'  { MSG("expression->(expression)"); }
+    ;
+
+
+    /**************************************************************************
+     *  Rules related to procedure definition and declarations
+     *************************************************************************/
+
+proc_parameter_list
+    : compound_name { MSG(""); }
+    | proc_parameter_list ',' compound_name { MSG(""); }
     ;
 
 proc_definition
-    : proc_declaration proc_body {
-            MSG("");
-        }
+    : PROC compound_name '(' proc_parameter_list ')' proc_body { MSG(""); }
     ;
 
 entry_definition
-    : PROC ENTRY '(' proc_decl_parameter_list ')' '(' proc_decl_parameter_list ')' proc_body {
-            MSG("");
-        }
+    : PROC ENTRY '(' proc_parameter_list ')' proc_body { MSG(""); }
     ;
 
-proc_call
-    : complex_name '(' proc_call_parameter_list ')' '(' proc_decl_parameter_list ')' {
-            MSG("");
-        }
+proc_reference
+    : compound_name '(' generic_value_list ')'
     ;
 
     /**************************************************************************
-     *  Procedure clause related definitions
+     *  Productions that implement a proc_body
      *************************************************************************/
 
+proc_body_element
+    : proc_body { MSG(""); }
+    | proc_definition { MSG(""); }
+    | variable_definition ';' { MSG(""); }
+    | if_clause { MSG(""); }
+    | while_clause { MSG(""); }
+    | do_clause { MSG(""); }
+    | switch_clause { MSG(""); }
+    | return_clause { MSG(""); }
+    | proc_reference  ';' { MSG(""); }
+    | pre_post_inc ';' { MSG(""); }
+    | DISPOSE '(' compound_name ')' ';' { MSG(""); }
+    | YIELD ';' { MSG(""); }
+    | BREAK ';' { MSG(""); }
+    | variable_assignment { MSG(""); }
+    ;
+
+proc_body_element_list
+    : proc_body_element { MSG(""); }
+    | proc_body_element_list proc_body_element { MSG(""); }
+    ;
+
+proc_body
+    : '{' '}' { MSG(""); }
+    | '{' proc_body_element_list '}' { MSG(""); }
+    ;
+
 loop_body_element
-    : proc_body_element {
-            MSG("");
-        }
-    | CONTINUE ';' {
-            MSG("");
-        }
+    : proc_body_element { MSG(""); }
+    | CONTINUE ';' { MSG(""); }
     ;
 
 loop_body_element_list
-    : loop_body_element {
-            MSG("");
-        }
-    | loop_body_element_list loop_body_element {
-            MSG("");
-        }
+    : loop_body_element { MSG(""); }
+    | loop_body_element_list loop_body_element { MSG(""); }
     ;
 
 loop_body
-    : '{' '}' {
-            MSG("");
-        }
-    | '{' loop_body_element_list '}' {
-            MSG("");
-        }
+    : '{' '}' { MSG(""); }
+    | '{' loop_body_element_list '}' { MSG(""); }
     ;
 
-while_expression
-    : expression {
-            MSG("");
-        }
-    | proc_call {
-            MSG("");
-        }
+else_clause_item
+    : ELSE '(' expression ')' proc_body { MSG(""); }
     ;
 
-while_clause
-    : WHILE '(' while_expression ')' loop_body {
-            MSG("");
-        }
-    ;
-
-do_clause
-    : DO loop_body WHILE '(' while_expression ')' ';' {
-            MSG("");
-        }
-    ;
-
-if_clause
-    : IF '(' expression ')' proc_body {
-            MSG("");
-        }
-    | IF '(' expression ')' proc_body else_clause_list {
-            MSG("");
-        }
-    ;
-
-else_clause
-    : ELSE '(' expression ')' proc_body {
-            MSG("");
-        }
-    | ELSE  proc_body {
-            MSG("");
-        }
+true_else_clause
+    : ELSE proc_body { MSG(""); }
+    | ELSE '(' ')' proc_body { MSG(""); }
     ;
 
 else_clause_list
-    : else_clause {
-            MSG("");
-        }
-    | else_clause_list else_clause {
-            MSG("");
-        }
+    : else_clause_item { MSG(""); }
+    | else_clause_list else_clause_item { MSG(""); }
+    ;
+
+if_clause
+    : IF '(' expression ')' proc_body { MSG(""); }
+    | IF '(' expression ')' proc_body true_else_clause { MSG(""); }
+    | IF '(' expression ')' proc_body else_clause_list { MSG(""); }
+    | IF '(' expression ')' proc_body else_clause_list true_else_clause { MSG(""); }
+    ;
+
+while_clause
+    : WHILE loop_body { MSG(""); }
+    | WHILE '(' ')' loop_body { MSG(""); }
+    | WHILE '(' expression ')' loop_body { MSG(""); }
+    | WHILE '(' expression ')' loop_body else_clause_list { MSG(""); }
+    ;
+
+do_clause
+    : DO loop_body WHILE ';' { MSG(""); }
+    | DO loop_body WHILE '(' ')' ';' { MSG(""); }
+    | DO loop_body WHILE '(' expression ')' ';' { MSG(""); }
+    | DO loop_body WHILE '(' expression ')' else_clause_list { MSG(""); }
+    ;
+
+case_clause_item
+    : CASE '(' generic_value ')' proc_body { MSG(""); }
+    ;
+
+case_clause_item_list
+    : case_clause_item { MSG(""); }
+    | case_clause_item_list case_clause_item { MSG(""); }
     ;
 
 switch_clause
-    : SWITCH '(' expression ')' '{' case_clause_list '}' {
-            MSG("");
-        }
-    | SWITCH '(' expression ')' '{' case_clause_list DEFAULT proc_body '}' {
-            MSG("");
-        }
+    : SWITCH '(' expression ')' case_clause_item_list { MSG(""); }
+    | SWITCH '(' expression ')' case_clause_item_list DEFAULT proc_body { MSG(""); }
     ;
 
-case_clause
-    : CASE '(' expression ')' proc_body {
-            MSG("");
-        }
+return_clause
+    : RETURN expression ';' { MSG(""); }
+    | RETURN ';' { MSG(""); }
     ;
-
-case_clause_list
-    : case_clause
-    | case_clause_list case_clause
-    ;
-
-    //| DEFAULT proc_body {
-    //        MSG("");
-    //    }
-    //;
 
 pre_post_inc
-    : complex_name INC {
-            MSG("");
-        }
-    | complex_name DEC {
-            MSG("");
-        }
-    | INC complex_name {
-            MSG("");
-        }
-    | DEC complex_name {
-            MSG("");
-        }
+    : compound_name INC { MSG(""); }
+    | compound_name DEC { MSG(""); }
+    | INC compound_name { MSG(""); }
+    | DEC compound_name { MSG(""); }
     ;
+
 
 %%
 

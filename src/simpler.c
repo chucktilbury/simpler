@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+
+#include <argp.h>
 
 #include "common.h"
 #include "parser.h"
@@ -7,6 +7,13 @@
 #include "llvm-c/BitReader.h"
 #include "llvm-c/BitWriter.h"
 #include "llvm-c/Core.h"
+
+BEGIN_CONFIG
+    CONFIG_NUM("-v", "VERBOSE", "Set the verbosity from 0 to 50", 0, 0)
+    CONFIG_STR("-o", "OUTFILE", "Specify the file name to output", 1, NULL)
+    CONFIG_LIST("-i", "INFILES", "Specify a list of input files separated by \":\"", 1, NULL)
+    CONFIG_LIST("-p", "FPATH", "Specify directories to search for imports", 0, ".:include")
+END_CONFIG
 
 
 LLVMModuleRef Module;
@@ -21,17 +28,18 @@ extern int yydebug;
 
 int main(int argc, char **argv)
 {
-    init_errors(10, stdout);
-    yydebug = 0;
+    configure(argc, argv);
 
-    int file_count =  get_cmd_line(argc, argv);
+    int verbose = GET_CONFIG_NUM("VERBOSE");
+    init_errors(verbose, stdout);
+    if(verbose > 10)
+        yydebug = 1;
+    else
+        yydebug = 0;
 
-    if(outfile == NULL)
-        outfile = strdup("out.bc");
-
-    for(int i = 0; i < file_count; i++)
+    for(char* str = iterate_config("INFILES"); str != NULL; str = iterate_config(NULL))
     {
-        open_file(infile[i]);
+        open_file(str);
         yyparse();
     }
 

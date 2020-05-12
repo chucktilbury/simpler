@@ -1,0 +1,6 @@
+
+When a proc is defined inside another proc, it can be accessed using '.' notation.
+
+A PROC is just another variable. A declaration looks like PROC complex_name ;
+
+Get rid of the return parameters and just return a tuple...

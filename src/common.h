@@ -15,5 +15,6 @@
 #include "scanner.h"
 #include "stacks.h"
 #include "parser.h"
+#include "configure.h"
 
 #endif

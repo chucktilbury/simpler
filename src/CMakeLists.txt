@@ -2,8 +2,8 @@ project(simpler)
 
 set(LEX_FILE      ${CMAKE_CURRENT_SOURCE_DIR}/scanner.l)
 set(LEX_C_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/scanner.c)
-set(CMD_FILE      ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.l)
-set(CMD_C_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.c)
+#set(CMD_FILE      ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.l)
+#set(CMD_C_SOURCE  ${CMAKE_CURRENT_SOURCE_DIR}/cmdline.c)
 set(YACC_FILE     ${CMAKE_CURRENT_SOURCE_DIR}/parser.y)
 set(YACC_C_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
 set(YACC_H        ${PROJECT_INCLUDE_DIRECTORY}/parser.h)
@@ -14,11 +14,11 @@ add_custom_command(OUTPUT ${LEX_C_SOURCE}
         COMMAND flex -o ${LEX_C_SOURCE} ${LEX_FILE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_custom_command(OUTPUT ${CMD_C_SOURCE}
-        DEPENDS ${CMD_FILE}
-        PRE_BUILD
-        COMMAND flex -Pcmd_ -o ${CMD_C_SOURCE} ${CMD_FILE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+#add_custom_command(OUTPUT ${CMD_C_SOURCE}
+#        DEPENDS ${CMD_FILE}
+#        PRE_BUILD
+#        COMMAND flex -Pcmd_ -o ${CMD_C_SOURCE} ${CMD_FILE}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_custom_command(OUTPUT ${YACC_C_SOURCE} ${YACC_H}
         DEPENDS ${YACC_FILE}
@@ -27,7 +27,8 @@ add_custom_command(OUTPUT ${YACC_C_SOURCE} ${YACC_H}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(${PROJECT_NAME}
-    cmdline.c
+    #cmdline.c
+    configure.c
     scanner.c
     parser.c
     errors.c

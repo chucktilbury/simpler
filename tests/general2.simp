@@ -1,0 +1,7 @@
+
+struct some.name {
+int var;
+float var;
+}= {.var=123, .var={.var=123}, .var={.var=123, .var={.var=123}}};
+
+//some.name = {.var=123, .vas=123}, {.var=123};
