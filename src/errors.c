@@ -135,7 +135,7 @@ void fatal_error(char* str, ...)
 }
 
 
-void debug_msg(int lev, const char *str, ...) {
+void debug_trace(int lev, const char *str, ...) {
 
     va_list args;
     FILE *ofp;
@@ -146,7 +146,7 @@ void debug_msg(int lev, const char *str, ...) {
         else
             ofp = stderr;
 
-        fprintf(ofp, "MSG: %s: %d: %d: ", get_file_name(), get_line_number(), get_col_number());
+        fprintf(ofp, "TRACE: %s: %d: %d: ", get_file_name(), get_line_number(), get_col_number());
         va_start(args, str);
         vfprintf(ofp, str, args);
         va_end(args);

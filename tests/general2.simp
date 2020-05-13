@@ -4,4 +4,6 @@ int var;
 float var;
 }= {.var=123, .var={.var=123}, .var={.var=123, .var={.var=123}}};
 
-//some.name = {.var=123, .vas=123}, {.var=123};
+def name() {
+some.name = {.var=123, .vas=123, .var={.var=123}};
+}

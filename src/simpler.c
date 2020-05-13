@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     else
         yydebug = 0;
 
-    for(char* str = iterate_config("INFILES"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("INFILES"); str != NULL; str = iterate_config("INFILES"))
     {
         open_file(str);
         yyparse();

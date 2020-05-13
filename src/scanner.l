@@ -69,7 +69,8 @@ static void update_loc(void){
     /* keywords */
 "nothing"       { return NOTHING; }
 "import"        { return IMPORT; }
-"proc"          { return PROC; }
+"func"          { return PROC; }
+"def"           { return PROC; }
 "struct"        { return STRUCT; }
 "list"          { return LIST; }
 "dict"          { return DICT; }
@@ -217,7 +218,7 @@ static void update_loc(void){
 
 <<EOF>> {
 
-        debug(5, "closing file \"%s\"", name_stack->name);
+        DEBUG("closing file \"%s\"", name_stack->name);
         _file_name_stack *name = name_stack->next;
         free(name_stack->name);
         free(name_stack);
@@ -238,7 +239,7 @@ void open_file(char *fname) {
 // TODO: add a check to make sure that any file is opened exactly once.
 // TODO: add logic to allow for files to be searched for using a command parameter.
 
-    debug(5, "opening file: \"%s\"", fname);
+    DEBUG("opening file: \"%s\"", fname);
     if(NULL == (name = calloc(1, sizeof(_file_name_stack))))
         scanner_error("cannot allocate memory for file stack");
 

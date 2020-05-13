@@ -27,18 +27,21 @@ void inc_error_count(void);
 void inc_warning_count(void);
 
 void debug_mark(int, const char*, int, const char *);
-void debug_msg(int, const char *, ...);
+void debug_trace(int, const char *, ...);
 
 /*
  * TODO: Add more macros for debugging and memory tracking.
  */
-#  ifdef TRACE
-#    define MARK()      debug_mark(5, __FILE__, __LINE__, __func__)
-#    define MSG(...)    debug_msg(5, __VA_ARGS__)
-#  else
-#    define MARK()
-#    define MSG(...)
-#  endif
+#  ifdef _DEBUGGING
+#define MARK() debug_mark(5, __FILE__, __LINE__, __func__)
+#define TRACE(...) debug_trace(5, __VA_ARGS__)
+#define DEBUG(...) debug(6, __VA_ARGS__)
+#
+#else
+#define MARK()
+#define TRACE(...)
+#define DEBUG(...)
+#endif
 
 
 #endif /* _ERRORS_H_ */

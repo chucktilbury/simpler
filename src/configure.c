@@ -17,124 +17,37 @@
 
 #include "configure.h"
 
-static char cmd_line_buffer[1024*64];
-static char list_buffer[1024*8];
+//static char cmd_line_buffer[1024*4];
 static char prog_name[1024];
 
-static int count_struct(void) {
+static configuration_t* find_config_by_arg(const char* arg) {
 
-    int i;
+    for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
+        if(_global_config[i].arg == NULL)
+            continue;
+        else if(!strcmp(arg, _global_config[i].arg)) {
+            return &_global_config[i];
+        }
+    }
 
-    for(i = 0; _global_config[i].type != CONFIG_TYPE_END; i++)
-        /* nothing */ ;
-    return i;
+    return NULL;
 }
 
-static int preprocess_command_line(int argc, char** argv) {
+static configuration_t* find_config_by_name(const char* name) {
 
-    int num = 0;
-
-    memset(cmd_line_buffer, 0, sizeof(cmd_line_buffer));
-    memset(list_buffer, 0, sizeof(list_buffer));
-    memset(prog_name, 0, sizeof(prog_name));
-
-    strcpy(prog_name, argv[0]);
-
-    for(int idx = 1; idx < argc; idx++) {
-        if(argv[idx][0] == '-') {
-            strncat(cmd_line_buffer, argv[idx], 2);
-            if(argv[idx][2] != 0) {
-                strcat(cmd_line_buffer, " ");
-                strcat(cmd_line_buffer, &argv[idx][2]);
-                num++;
-            }
-            strcat(cmd_line_buffer, " ");
-            num++;
-        }
-        else {
-            strcat(cmd_line_buffer, argv[idx]);
-            strcat(cmd_line_buffer, " ");
-            num++;
+    for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
+        if(_global_config[i].name == NULL)
+            continue;
+        else if(!strcmp(name, _global_config[i].name)) {
+            return &_global_config[i];
         }
     }
-    return num;
+
+    return NULL;
 }
 
-// this expects to be called on an even token boundary.
-static void process_token(const char* tok) {
-
-    int flag = 0;
-
-    // find the token in the data
-    if(tok[0] == '-') {
-        for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
-            if(_global_config[i].arg == NULL)
-                continue;
-
-            if(!strcmp(tok, _global_config[i].arg)) {
-                switch(_global_config[i].type) {
-                    case CONFIG_TYPE_NUM: {
-                            char* str = strtok(NULL, " ");
-                            int num = (int)strtol(str, NULL, 0);
-                            if(num == 0 && errno != 0) {
-                                fprintf(stderr, "CMD ERROR: Cannot convert string \"%s\" to a number\n", str);
-                                show_use();
-                            }
-                            _global_config[i].value.number = num;
-                            _global_config[i].touched++;
-                        }
-                        break;
-                    case CONFIG_TYPE_LIST:
-                    case CONFIG_TYPE_STR: {
-                            char* str = strtok(NULL, " ");
-                            _global_config[i].value.string = str; // pointer into the buffer
-                            _global_config[i].touched++;
-                        }
-                        break;
-                    case CONFIG_TYPE_BOOL:
-                        _global_config[i].value.number = (_global_config[i].value.number & 0x01) ^ 0x01;
-                        _global_config[i].touched++;
-                        break;
-                    case CONFIG_TYPE_HELP:
-                        show_use();
-                        break;
-                    default:
-                        fprintf(stderr, "INTERNAL ERROR: Cannot parse command line\n");
-                        exit(1);
-                }
-                flag++;
-                break;
-            }
-        }
-    }
-    else {
-        if(strlen(list_buffer) > 0)
-            strcat(list_buffer, ":");
-        strcat(list_buffer, tok);
-        flag++;
-    }
-
-    if(!flag) {
-        fprintf(stderr, "CMD ERROR: Unknown command parameter: \"%s\"\n", tok);
-        show_use();
-    }
-}
-
-int configure(int argc, char** argv) {
-
-    int args = preprocess_command_line(argc, argv);
-    if(args != 0) {
-        char* tok = strtok(cmd_line_buffer, " ");
-        do {
-            process_token(tok);
-            tok = strtok(NULL, " ");
-        } while(tok != NULL);
-
-        if(strlen(list_buffer) > 0) {
-            _global_config[count_struct()-1].value.string = list_buffer;
-            _global_config[count_struct()-1].touched++;
-        }
-    }
+// aborts program if required parameter is not found
+static void check_required(void) {
 
     for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
         if(_global_config[i].required != 0 && _global_config[i].touched == 0) {
@@ -144,8 +57,67 @@ int configure(int argc, char** argv) {
             show_use();
         }
     }
+}
 
-    return args;
+int configure(int argc, char** argv) {
+
+    configuration_t* config;
+    int idx;
+
+    strncpy(prog_name, argv[0], sizeof(prog_name));
+    for(idx = 1; idx < argc; idx++) {
+        config = find_config_by_arg(argv[idx]);
+        if(config == NULL) {
+            fprintf(stderr, "CMD ERROR: Unknown configuration parameter: \"%s\"\n", argv[idx]);
+            show_use(); // does not return
+        }
+
+        switch(config->type) {
+            case CONFIG_TYPE_NUM: {
+                    if(idx+1 > argc) {
+                        fprintf(stderr, "CMD ERROR: Expected a number to follow the \"%s\" parameter\n", argv[idx]);
+                        exit(1);
+                    }
+                    idx++;
+                    int num = (int)strtol(argv[idx], NULL, 0);
+                    if(num == 0 && errno != 0) {
+                        fprintf(stderr, "CMD ERROR: Cannot convert string \"%s\" to a number\n", argv[idx]);
+                        show_use();
+                    }
+                    config->value.number = num;
+                    config->touched++;
+                }
+                break;
+            case CONFIG_TYPE_LIST:
+            case CONFIG_TYPE_STR: {
+                    if(idx+1 > argc) {
+                        fprintf(stderr, "CMD ERROR: Expected a string or list to follow the \"%s\" parameter\n", argv[idx]);
+                        exit(1);
+                    }
+                    idx++;
+                    config->value.string = strdup(argv[idx]);
+                    config->touched++;
+                }
+                break;
+            case CONFIG_TYPE_BOOL:
+                config->value.number = (config->value.number & 0x01) ^ 0x01;
+                config->touched++;
+                break;
+            case CONFIG_TYPE_HELP:
+                show_use();
+                break;
+            default:
+                fprintf(stderr, "CFG ERROR: Unexpected configuration type (hello weeds)\n");
+                exit(1);
+        }
+    }
+
+    check_required();
+    return idx;
+}
+
+char* get_prog_name(void) {
+    return prog_name;
 }
 
 void* get_config(const char* name) {
@@ -155,92 +127,87 @@ void* get_config(const char* name) {
     if(!strcmp(name, "PROG_NAME"))
         retv = (void*)prog_name;
     else {
-        for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
-            if(!strcmp(name, _global_config[i].name)) {
-                switch(_global_config[i].type) {
-                    case CONFIG_TYPE_NUM:
-                    case CONFIG_TYPE_BOOL:
-                        retv = (void*)&_global_config[i].value.number;
-                        break;
-                    case CONFIG_TYPE_LIST:
-                    case CONFIG_TYPE_STR:
-                        retv = (void*)_global_config[i].value.string;
-                        break;
-                    default:
-                        fprintf(stderr, "INTERNAL ERROR: Cannot parse command line\n");
-                        exit(1);
-                }
-            }
+        configuration_t* config = find_config_by_name(name);
+        if(config == NULL) {
+            fprintf(stderr, "CFG ERROR: Cannot find configuration item: \"%s\"\n", name);
+            exit(1);
+        }
+
+        switch(config->type) {
+            case CONFIG_TYPE_NUM:
+            case CONFIG_TYPE_BOOL:
+                retv = (void*)&config->value.number;
+                break;
+            case CONFIG_TYPE_LIST:
+            case CONFIG_TYPE_STR:
+                retv = (void*)config->value.string;
+                break;
+            default:
+                fprintf(stderr, "CFG ERROR: Unknown config type\n");
+                exit(1);
         }
     }
-
     return retv;
 }
 
-// given the parameter name, iterate the list. If the name is not NULL, then the
-// list is reset to the beginning. See strtok(). If the name is not a list, then
-// simply return the value as a string.
+// given the parameter name, iterate the list. Returns any parameter by a string ptr,
+// including a number. Returns NULL when the end is reached.
 char* iterate_config(const char* name) {
 
-    static char* buf = NULL;
-    char* tok = NULL;
+    char* retv = NULL;
+    configuration_t* config = find_config_by_name(name);
+    if(config == NULL) {
+        fprintf(stderr, "CFG ERROR: Cannot find configuration parameter: \"%s\"\n", name);
+        exit(1);
+    }
 
-    if(name != NULL) {
-        if(buf != NULL) {
-            free(buf);
-            buf = NULL;
-        }
-
-        if(!strcmp(name, "PROG_NAME")) {
-            buf = strdup(prog_name);
-            tok = strtok(buf, ":");
-        }
-        else {
-            for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
-                if(!strcmp(name, _global_config[i].name)) {
-                    switch(_global_config[i].type) {
-                        case CONFIG_TYPE_NUM:
-                        case CONFIG_TYPE_BOOL: {
-                            char s[1024];
-                            snprintf(s, sizeof(s), "%d", _global_config[i].value.number);
-                            buf = strdup(s);
-                            tok = strtok(buf, ":");
-                            }
-                            break;
-                        case CONFIG_TYPE_LIST:
-                        case CONFIG_TYPE_STR:
-                            buf = strdup(_global_config[i].value.string);
-                            tok = strtok(buf, ":");
-                            break;
-                        default:
-                            fprintf(stderr, "INTERNAL ERROR: Cannot iterate command line\n");
-                            exit(1);
-                    }
-                    break;
+    switch(config->type) {
+        case CONFIG_TYPE_NUM:
+        case CONFIG_TYPE_BOOL:
+            // there can be only exactly one value here. Allocate the buffer if it does not exist
+            // and then return it.
+            if(config->iter_buf == NULL) {
+                config->iter_buf = calloc(12, sizeof(char)); // maximum number of characters in an int.
+                snprintf(config->iter_buf, 12, "%d", config->value.number);
+            }
+            else {
+                free(config->iter_buf);
+                config->iter_buf = NULL;
+            }
+            retv = config->iter_buf;
+            break;
+        case CONFIG_TYPE_STR:
+            // there can be only exactly one value here. It's already a (char*).
+            if(config->iter_buf == NULL)
+                config->iter_buf = config->value.string;
+            else
+                config->iter_buf = NULL;
+            retv = config->iter_buf;
+            break;
+        case CONFIG_TYPE_LIST:
+            // This type actually gets iterated. use strtok_r() to iterate it.
+            if(config->iter_buf != NULL) {
+                retv = strtok_r(NULL, ":", &config->sav_buf);
+                if(retv == NULL) {
+                    free(config->iter_buf);
+                    config->iter_buf = NULL;
                 }
             }
-        }
-
-        if(buf == NULL) {
-            fprintf(stderr, "INTERNAL ERROR: Cannot iterate config name \"%s\"\n", name);
+            else {
+                config->iter_buf = strdup(config->value.string);
+                retv = strtok_r(config->iter_buf, ":", &config->sav_buf);
+            }
+            break;
+        default:
+            fprintf(stderr, "CFG ERROR: Cannot iterate configuation parameter\n");
             exit(1);
-        }
     }
-    else if(buf != NULL) {
-        tok = strtok(NULL, ":");
-        if(tok == NULL) {
-            free(buf);
-            buf = NULL;
-        }
-    }
-    // else tok is NULL. Do noting.
-
-    return tok;
+    return retv;
 }
 
 void show_use(void) {
 
-    fprintf(stderr, "Use: %s <parameters>\n", prog_name);
+    fprintf(stderr, "Use: %s <parameters> <file list>\n", prog_name);
     for(int i = 0; _global_config[i].type != CONFIG_TYPE_END; i++) {
         switch(_global_config[i].type) {
             case CONFIG_TYPE_NUM:
@@ -305,7 +272,7 @@ void show_use(void) {
 BEGIN_CONFIG
     CONFIG_NUM("-v", "VERBOSE", "Control the verbosity", 0, 0)
     CONFIG_STR("-o", "OUT_FILE", "Name the output file", 1, NULL)
-    CONFIG_BOOL("-b", "BOOL_VAL", "Demostrate a boolean value", 0, 0)
+    CONFIG_BOOL("-boo", "BOOL_VAL", "Demostrate a boolean value", 0, 0)
     CONFIG_LIST("-i", "INPUT_FILES", "List of files to be compiled", 1, NULL)
     CONFIG_LIST("-s", "FILE_SEARCH", "Set the search path list", 0, "./:./include")
 END_CONFIG
@@ -322,32 +289,27 @@ int main(int argc, char** argv) {
     printf("bool_val: %d\n", GET_CONFIG_BOOL("BOOL_VAL"));
 
     printf("\nVERBOSE: ");
-    for(char* str = iterate_config("VERBOSE"); str != NULL; str = iterate_config(NULL))
-        printf("%s ", str);
-    printf("\n");
-
-    printf("PROG_NAME: ");
-    for(char* str = iterate_config("PROG_NAME"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("VERBOSE"); str != NULL; str = iterate_config("VERBOSE"))
         printf("%s ", str);
     printf("\n");
 
     printf("FILE_SEARCH: ");
-    for(char* str = iterate_config("FILE_SEARCH"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("FILE_SEARCH"); str != NULL; str = iterate_config("FILE_SEARCH"))
         printf("%s ", str);
     printf("\n");
 
     printf("INPUT_FILES: ");
-    for(char* str = iterate_config("INPUT_FILES"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("INPUT_FILES"); str != NULL; str = iterate_config("INPUT_FILES"))
         printf("%s ", str);
     printf("\n");
 
     printf("OUT_FILE: ");
-    for(char* str = iterate_config("OUT_FILE"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("OUT_FILE"); str != NULL; str = iterate_config("OUT_FILE"))
         printf("%s ", str);
     printf("\n");
 
     printf("BOOL_VAL: ");
-    for(char* str = iterate_config("BOOL_VAL"); str != NULL; str = iterate_config(NULL))
+    for(char* str = iterate_config("BOOL_VAL"); str != NULL; str = iterate_config("BOOL_VAL"))
         printf("%s ", str);
     printf("\n");
 
