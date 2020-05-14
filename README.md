@@ -1,2 +1,1 @@
-# simpler
-Simpler programming language
+docs/mainpage.md
