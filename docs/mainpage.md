@@ -37,3 +37,13 @@ so on.
 original definition of the element.
 * Classes are not supported. (though they may be in the future)
 * Nested functions are legal. A nested function can be accessed directly using dot notation.
+
+### Build
+
+Simpler requires Bison v3.6 and Flex v2.6 or higher to build. It also requires Cmake v3.5 or higher.
+
+1. clone the github repository. (google "git clone" if you don't know how)
+2. create a directory (called build, for example)
+3. "cd" to the build directory
+4. ```cmake ..```
+5. ```make```
